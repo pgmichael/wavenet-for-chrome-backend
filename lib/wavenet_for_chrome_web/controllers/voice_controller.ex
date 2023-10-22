@@ -28,8 +28,8 @@ defmodule WavenetForChromeWeb.VoiceController do
         Cachex.put(:default, "voices", voices, ttl: :timer.minutes(30))
         ok(conn, voices)
 
-      {:error, google_error} ->
-        Logger.error("Failed to fetch voices: #{inspect(google_error)}")
+      {:error, error} ->
+        Sentry.capture_message("Failed to fetch voices from Google: #{inspect(error)}")
 
         conn
         |> put_status(:internal_server_error)

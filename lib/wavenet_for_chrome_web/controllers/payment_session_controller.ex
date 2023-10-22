@@ -38,7 +38,7 @@ defmodule WavenetForChromeWeb.PaymentSessionController do
         customer
 
       {:error, stripe_error} ->
-        Logger.error("Failed to create stripe customer: #{inspect(stripe_error)}")
+        Sentry.capture_message("Failed to create stripe customer: #{inspect(stripe_error)}")
         internal_server_error(conn)
     end
   end
@@ -71,7 +71,7 @@ defmodule WavenetForChromeWeb.PaymentSessionController do
         finalize_stripe_invoice(invoice, conn)
 
       {:error, stripe_error} ->
-        Logger.error("Failed to create stripe invoice items: #{inspect(stripe_error)}")
+        Sentry.capture_message("Failed to create stripe invoice item: #{inspect(stripe_error)}")
         internal_server_error(conn)
     end
   end
