@@ -4,7 +4,7 @@ defmodule WavenetForChromeWeb.VoiceController do
   use WavenetForChromeWeb, :controller
 
   @tts_api_url System.get_env("TTS_API_URL")
-  @google_cloud_text_to_speech_api_key System.get_env("GOOGLE_CLOUD_TEXT_TO_SPEECH_API_KEY")
+  @tts_api_key System.get_env("TTS_API_KEY")
 
   def index(conn, _params) do
     case Cachex.get(:default, "voices") do
@@ -19,7 +19,7 @@ defmodule WavenetForChromeWeb.VoiceController do
   end
 
   defp fetch_voices(conn) do
-    url = "#{@tts_api_url}/voices?key=#{@google_cloud_text_to_speech_api_key}"
+    url = "#{@tts_api_url}/voices?key=#{@tts_api_key}"
 
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->

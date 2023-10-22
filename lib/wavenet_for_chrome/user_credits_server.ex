@@ -138,7 +138,7 @@ defmodule WavenetForChrome.UserCreditsServer do
 
   defp synthesize(_user, params) do
     tts_api_url = System.get_env("TTS_API_URL")
-    tts_api_key = System.get_env("GOOGLE_CLOUD_TEXT_TO_SPEECH_API_KEY")
+    tts_api_key = System.get_env("TTS_API_KEY")
     url = "#{tts_api_url}/text:synthesize?key=#{tts_api_key}"
 
     payload =
