@@ -84,7 +84,6 @@ defmodule WavenetForChrome.UserCreditsServer do
   defp charge_user(user) do
     result =
       Stripe.Charge.create(%{
-        # TODO(mike): Should be a constant
         "amount" => 975,
         "currency" => "usd",
         "customer" => user.stripe_customer_id
@@ -95,13 +94,15 @@ defmodule WavenetForChrome.UserCreditsServer do
         User.create_invoice_from_charge(user, charge)
         |> User.adjust_credits(charge.amount * 1000)
 
-      {:error, _} ->
-        # TODO(mike): Sentry
+      {:error, error} ->
+        Sentry.capture_exception(%RuntimeError{
+          message: "Failed to charge user: #{inspect(error)}"
+        })
+
         {:error, "Failed to charge user"}
     end
   end
 
-  # TODO(mike): Sentry when this fails
   defp track(user_id, user_ip_address, params) do
     changeset =
       Insight.changeset(%Insight{}, %{
@@ -118,8 +119,14 @@ defmodule WavenetForChrome.UserCreditsServer do
       })
 
     case Repo.insert(changeset) do
-      {:error, error} -> Logger.error(inspect(error))
-      _ -> :ok
+      {:error, error} ->
+        # Swallow the error since we don't want to block the user
+        Sentry.capture_exception(%RuntimeError{
+          message: "Failed to track user: #{inspect(error)}"
+        })
+
+      _ ->
+        :ok
     end
   end
 
@@ -169,12 +176,18 @@ defmodule WavenetForChrome.UserCreditsServer do
         {:error, Poison.decode!(body)}
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        # TODO(mike): Sentry
-        IO.puts("HTTP request failed: #{reason}")
+        Sentry.capture_exception(%RuntimeError{
+          message: "Failed to synthesize audio: #{inspect(reason)}"
+        })
+
+        {:error, "Failed to synthesize audio"}
 
       _ ->
-        # TODO(mike): Sentry
-        IO.puts("Unexpected response")
+        Sentry.capture_exception(%RuntimeError{
+          message: "Failed to synthesize audio. Unknown error."
+        })
+
+        {:error, "Failed to synthesize audio"}
     end
   end
 end

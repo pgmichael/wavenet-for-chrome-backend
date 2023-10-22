@@ -15,10 +15,6 @@ config :wavenet_for_chrome,
 config :wavenet_for_chrome, WavenetForChromeWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Phoenix.Endpoint.Cowboy2Adapter,
-  render_errors: [
-    formats: [html: WavenetForChromeWeb.ErrorHTML, json: WavenetForChromeWeb.ErrorJSON],
-    layout: false
-  ],
   pubsub_server: WavenetForChrome.PubSub,
   live_view: [signing_salt: "7L3zRVX+"]
 
