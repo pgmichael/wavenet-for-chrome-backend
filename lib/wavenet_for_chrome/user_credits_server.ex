@@ -95,7 +95,7 @@ defmodule WavenetForChrome.UserCreditsServer do
     case result do
       {:ok, charge} ->
         User.create_invoice_from_charge(user, charge)
-        |> User.adjust_credits(charge.amount * 1000)
+        |> User.adjust_credits(charge.amount * 10_000)
 
       {:error, error} ->
         Sentry.capture_exception(%RuntimeError{

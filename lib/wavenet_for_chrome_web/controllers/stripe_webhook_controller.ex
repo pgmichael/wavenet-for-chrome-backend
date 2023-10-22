@@ -23,7 +23,7 @@ defmodule WavenetForChromeWeb.StripeWebhookController do
     Repo.transaction(fn ->
       Repo.get_by!(User, stripe_customer_id: customer_id)
       |> User.create_invoice_from_stripe_invoice(stripe_invoice)
-      |> User.adjust_credits(stripe_invoice.amount_paid * 10000)
+      |> User.adjust_credits(stripe_invoice.amount_paid * 10_000)
     end)
 
     ok(conn)
