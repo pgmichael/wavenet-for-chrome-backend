@@ -26,7 +26,7 @@ defmodule WavenetForChromeWeb.VoiceController do
         voices = Jason.decode!(body)["voices"]
         Logger.info("Fetched #{length(voices)} voices from Google")
         Cachex.put(:default, "voices", voices, ttl: :timer.minutes(30))
-        json(conn, %{data: voices})
+        ok(conn, voices)
 
       {:error, google_error} ->
         Logger.error("Failed to fetch voices: #{inspect(google_error)}")
