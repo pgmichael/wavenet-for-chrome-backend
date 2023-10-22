@@ -1,18 +1,40 @@
-# WavenetForChrome
+# Wavenet for Chrome backend
 
-To start your Phoenix server:
+Backend for the [Wavenet for Chrome](https://www.github.com/pgmichael/wavenet-for-chrome) extension.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+## Development
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+Create a `.env` file in the root directory with the following contents:
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+```bash
+# Google
+export TTS_API_KEY=<your_api_key>
+export TTS_API_URL=https://texttospeech.googleapis.com/v1
 
-## Learn more
+# Database
+export PGHOST=<your_postgres_host>
+export POSTGRES_DB=<your_postgres_db>
+export POSTGRES_PASSWORD=<your_postgres_password>
+export POSTGRES_USER=<your_postgres_user>
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+# Stripe (Not required for development using your own API key)
+export STRIPE_SECRET_KEY=<your_stripe_secret_key>
+export STRIPE_SIGNING_SECRET=<your_stripe_signing_secret>
+export STRIPE_PRICE_ID=<your_stripe_price_id>
+```
+
+Then source your `.env` file and run the server:
+
+```bash
+# Source your .env file
+source .env
+
+# Install dependencies
+mix deps.get
+
+# Create and migrate your database
+mix ecto.setup
+
+# Run the server
+mix phx.server
+```
