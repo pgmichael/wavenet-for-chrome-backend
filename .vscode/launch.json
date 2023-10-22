@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "mix_task",
+      "name": "mix phx.server",
+      "request": "launch",
+      "task": "phx.server",
+      "projectDir": "${workspaceRoot}",
+      "exitAfterTaskReturns": false
+    }
+  ]
+}
