@@ -4,6 +4,8 @@ Backend for the [Wavenet for Chrome](https://www.github.com/pgmichael/wavenet-fo
 
 ## Development
 
+A live version of the backend is hosted at [https://api.wavenet-for-chrome.com](https://api.wavenet-for-chrome.com/v1). So running the backend locally is not required for development of the extension. However, if you want to run the backend locally, follow the instructions below:
+
 Create a `.env` file in the root directory with the following contents:
 
 ```bash

@@ -14,9 +14,16 @@ defmodule WavenetForChromeWeb.Router do
     plug :accepts, ["json"]
   end
 
+  scope "/", WavenetForChromeWeb do
+    pipe_through :api
+
+    get "/", RootController, :index
+  end
+
   scope "/v1", WavenetForChromeWeb do
     pipe_through :api
 
+    get "/", RootController, :index
     get "/health", HealthController, :index
     post "/synthesize", TextToSpeechController, :synthesize
     resources "/users", UserController
