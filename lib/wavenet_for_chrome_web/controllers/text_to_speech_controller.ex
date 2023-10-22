@@ -13,7 +13,6 @@ defmodule WavenetForChromeWeb.TextToSpeechController do
   }
 
   def synthesize(conn, params) do
-    throw(~c"sentry test")
     user = get_user_by_secret_key(conn)
     text_or_ssml = Map.get(params, "text") || Map.get(params, "ssml")
     cost = calculate_cost(params, String.length(text_or_ssml))
