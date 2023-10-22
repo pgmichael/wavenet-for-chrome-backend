@@ -1,7 +1,7 @@
 require Logger
 
 defmodule WavenetForChrome.UserCreditsServer do
-  alias WavenetForChrome.Insight
+  alias WavenetForChromeWeb.TextToSpeechService
   alias Hex.API.User
   alias WavenetForChrome.User
   alias WavenetForChrome.Repo
@@ -15,6 +15,8 @@ defmodule WavenetForChrome.UserCreditsServer do
   # depleting their credits too quickly, and hogging our API quotas
   @rate_limit 50
   @replenish_interval div(1_000, @rate_limit)
+
+  @tts_api_key System.get_env("TTS_API_KEY")
 
   def start_link(user_id, user_ip_address) do
     GenServer.start_link(__MODULE__, %{user_id: user_id, user_ip_address: user_ip_address},
@@ -60,13 +62,14 @@ defmodule WavenetForChrome.UserCreditsServer do
       Repo.transaction(fn ->
         user
         |> top_up_credits(cost)
-        |> decrement_credits(cost)
-        |> synthesize(params)
+        |> User.adjust_credits(-cost)
+
+        TextToSpeechService.synthesize(params, @tts_api_key)
       end)
 
     case response do
       {:ok, body} ->
-        track(user_id, user_ip_address, params)
+        TextToSpeechService.track(user_id, user_ip_address, params)
         {:reply, body, %{state | tokens: tokens - 1}}
 
       {:error, body} ->
@@ -100,94 +103,6 @@ defmodule WavenetForChrome.UserCreditsServer do
         })
 
         {:error, "Failed to charge user"}
-    end
-  end
-
-  defp track(user_id, user_ip_address, params) do
-    changeset =
-      Insight.changeset(%Insight{}, %{
-        user_id: user_id,
-        user_ip_address: user_ip_address,
-        character_count: String.length(params["text"] || params["ssml"]),
-        voice_name: params["voice_name"],
-        voice_language_code: params["voice_language_code"],
-        audio_pitch: params["audio_pitch"],
-        audio_speaking_rate: params["audio_speaking_rate"],
-        audio_volume_gain_db: params["audio_volume_gain_db"],
-        audio_encoding: params["audio_encoding"],
-        extension_version: params["extension_version"]
-      })
-
-    case Repo.insert(changeset) do
-      {:error, error} ->
-        # Swallow the error since we don't want to block the user
-        Sentry.capture_exception(%RuntimeError{
-          message: "Failed to track user: #{inspect(error)}"
-        })
-
-      _ ->
-        :ok
-    end
-  end
-
-  defp decrement_credits(user, cost) do
-    user
-    |> User.changeset(%{credits: user.credits - cost})
-    |> Repo.update!()
-  end
-
-  defp synthesize(_user, params) do
-    tts_api_url = System.get_env("TTS_API_URL")
-    tts_api_key = System.get_env("TTS_API_KEY")
-    url = "#{tts_api_url}/text:synthesize?key=#{tts_api_key}"
-
-    payload =
-      Jason.encode!(%{
-        audioConfig: %{
-          audioEncoding: params["audio_encoding"],
-          pitch: params["audio_pitch"],
-          speakingRate: params["audio_speaking_rate"],
-          volumeGainDb: params["audio_volume_gain_db"]
-        },
-        input: %{
-          ssml: params["ssml"],
-          text: params["text"]
-        },
-        voice: %{
-          languageCode: params["voice_language_code"],
-          name: params["voice_name"]
-        }
-      })
-
-    headers = [
-      {"content-type", "application/json; charset=utf-8"}
-    ]
-
-    respone = HTTPoison.post(url, payload, headers)
-    Logger.info(inspect(respone))
-
-    case respone do
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body}}
-      when status_code in 200..299 ->
-        {:ok, Poison.decode!(body)}
-
-      {:ok, %HTTPoison.Response{status_code: status_code, body: body}}
-      when status_code in 400..599 ->
-        {:error, Poison.decode!(body)}
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Sentry.capture_exception(%RuntimeError{
-          message: "Failed to synthesize audio: #{inspect(reason)}"
-        })
-
-        {:error, "Failed to synthesize audio"}
-
-      _ ->
-        Sentry.capture_exception(%RuntimeError{
-          message: "Failed to synthesize audio. Unknown error."
-        })
-
-        {:error, "Failed to synthesize audio"}
     end
   end
 end

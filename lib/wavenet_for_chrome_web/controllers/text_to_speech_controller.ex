@@ -1,6 +1,7 @@
 require Logger
 
 defmodule WavenetForChromeWeb.TextToSpeechController do
+  alias WavenetForChromeWeb.TextToSpeechService
   use WavenetForChromeWeb, :controller
 
   @pricing_table %{
@@ -13,20 +14,32 @@ defmodule WavenetForChromeWeb.TextToSpeechController do
   }
 
   def synthesize(conn, params) do
-    user = get_user_by_secret_key(conn)
-    text_or_ssml = Map.get(params, "text") || Map.get(params, "ssml")
-    cost = calculate_cost(params, String.length(text_or_ssml))
-    user_ip_address = get_user_ip_address(conn)
+    if Map.has_key?(params, "key") do
+      case TextToSpeechService.synthesize(params, params["key"]) do
+        {:ok, body} ->
+          TextToSpeechService.track(nil, get_user_ip_address(conn), params)
+          ok(conn, body)
 
-    pid =
-      GenServer.whereis({:global, user.id}) ||
-        case WavenetForChrome.UserCreditsServer.start_link(user.id, user_ip_address) do
-          {:ok, pid} -> pid
-        end
+        {:error, body} ->
+          unprocessable_entity(conn, body)
+      end
+    else
+      user = get_user_by_secret_key(conn)
+      text_or_ssml = Map.get(params, "text") || Map.get(params, "ssml")
+      cost = calculate_cost(params, String.length(text_or_ssml))
+      user_ip_address = get_user_ip_address(conn)
 
-    case WavenetForChrome.UserCreditsServer.charge(pid, cost, params) do
-      {:ok, body} -> ok(conn, body)
-      {:error, body} -> unprocessable_entity(conn, body)
+      pid =
+        GenServer.whereis({:global, user.id}) ||
+          case WavenetForChrome.UserCreditsServer.start_link(user.id, user_ip_address) do
+            {:ok, pid} -> pid
+            {:error, {:already_started, pid}} -> pid
+          end
+
+      case WavenetForChrome.UserCreditsServer.charge(pid, cost, params) do
+        {:ok, body} -> ok(conn, body)
+        {:error, body} -> unprocessable_entity(conn, body)
+      end
     end
   end
 
