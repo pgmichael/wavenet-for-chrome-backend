@@ -1,4 +1,6 @@
 defmodule WavenetForChrome.Insight do
+  alias WavenetForChromeWeb.TextToSpeech
+  alias WavenetForChrome.{Repo, Insight}
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -30,6 +32,7 @@ defmodule WavenetForChrome.Insight do
     field :audio_speaking_rate, :float
     field :audio_volume_gain_db, :float
     field :audio_encoding, :string
+    field :audio_profile, {:array, :string}
     field :extension_version, :string, default: "UNKNOWN"
 
     timestamps(type: :utc_datetime)
@@ -47,6 +50,7 @@ defmodule WavenetForChrome.Insight do
       :audio_speaking_rate,
       :audio_volume_gain_db,
       :audio_encoding,
+      :audio_profile,
       :extension_version
     ])
     |> validate_required([
@@ -59,5 +63,26 @@ defmodule WavenetForChrome.Insight do
       :audio_volume_gain_db,
       :audio_encoding
     ])
+  end
+
+  def track(params, user_ip_address \\ nil, user_id \\ nil) do
+    attrs =
+      Map.merge(params, %{
+        "character_count" => TextToSpeech.get_character_count!(params),
+        "user_id" => user_id,
+        "user_ip_address" => user_ip_address
+      })
+
+    changeset = changeset(%Insight{}, attrs)
+
+    case Repo.insert(changeset) do
+      {:ok, insight} ->
+        {:ok, insight}
+
+      {:error, error} ->
+        throw(error)
+        Sentry.capture_message("Failed to create insight: #{inspect(error)}")
+        {:error, error}
+    end
   end
 end
