@@ -30,30 +30,8 @@ defmodule WavenetForChrome.User do
     |> validate_number(:credits, greater_than_or_equal_to: 0)
   end
 
-  def create_invoice_from_stripe_invoice(user, stripe_invoice) do
-    Repo.insert!(%Invoice{
-      user_id: user.id,
-      stripe_invoice_id: stripe_invoice.id,
-      hosted_invoice_url: stripe_invoice.hosted_invoice_url,
-      amount: stripe_invoice.amount_paid
-    })
-
-    user
-  end
-
-  def create_invoice_from_charge(user, charge) do
-    Repo.insert!(%Invoice{
-      user_id: user.id,
-      stripe_invoice_id: charge.id,
-      hosted_invoice_url: charge.receipt_url,
-      amount: charge.amount
-    })
-
-    user
-  end
-
-  def adjust_credits(user, cost) do
-    changeset = changeset(user, %{credits: user.credits + cost})
+  def adjust_credits!(user, count) do
+    changeset = changeset(user, %{credits: user.credits + count})
 
     Repo.update!(changeset)
   end

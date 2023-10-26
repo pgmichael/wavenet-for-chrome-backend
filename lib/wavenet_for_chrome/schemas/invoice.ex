@@ -1,4 +1,5 @@
 defmodule WavenetForChrome.Invoice do
+  alias WavenetForChrome.Repo
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -30,5 +31,23 @@ defmodule WavenetForChrome.Invoice do
     |> validate_length(:hosted_invoice_url, min: 1, max: 255)
     |> validate_number(:amount, greater_than_or_equal_to: 0)
     |> unique_constraint(:stripe_invoice_id)
+  end
+
+  def create!(user, stripe_invoice = %Stripe.Invoice{}) do
+    Repo.insert!(%__MODULE__{
+      user_id: user.id,
+      stripe_invoice_id: stripe_invoice.id,
+      hosted_invoice_url: stripe_invoice.hosted_invoice_url,
+      amount: stripe_invoice.amount_paid
+    })
+  end
+
+  def create!(user, stripe_charge = %Stripe.Charge{}) do
+    Repo.insert!(%__MODULE__{
+      user_id: user.id,
+      stripe_invoice_id: stripe_charge.id,
+      hosted_invoice_url: stripe_charge.receipt_url,
+      amount: stripe_charge.amount
+    })
   end
 end

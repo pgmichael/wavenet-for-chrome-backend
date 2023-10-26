@@ -36,8 +36,14 @@ defmodule WavenetForChromeWeb.UserController do
     url = "https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=#{auth_token}"
 
     case HTTPoison.get(url) do
-      {:ok, %HTTPoison.Response{status_code: 200, body: body}} -> Jason.decode!(body)
-      {:error, _} -> unauthorized(conn)
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
+        Jason.decode!(body)
+
+      {:ok, %HTTPoison.Response{status_code: status_code}} ->
+        unauthorized(conn, %{message: "Received #{status_code} from Google"})
+
+      {:error, error} ->
+        throw(error)
     end
   end
 

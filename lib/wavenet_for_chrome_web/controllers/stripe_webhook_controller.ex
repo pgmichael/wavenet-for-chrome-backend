@@ -2,8 +2,7 @@ require Logger
 
 defmodule WavenetForChromeWeb.StripeWebhookController do
   use WavenetForChromeWeb, :controller
-  alias WavenetForChrome.User
-  alias WavenetForChrome.Repo
+  alias WavenetForChrome.{Repo, Invoice, User}
 
   def create(conn, _) do
     payload = conn.assigns[:raw_body]
@@ -21,16 +20,16 @@ defmodule WavenetForChromeWeb.StripeWebhookController do
     customer_id = stripe_invoice.customer
 
     Repo.transaction(fn ->
-      Repo.get_by!(User, stripe_customer_id: customer_id)
-      |> User.create_invoice_from_stripe_invoice(stripe_invoice)
-      |> User.adjust_credits(stripe_invoice.amount_paid * 10_000)
+      user = Repo.get_by!(User, stripe_customer_id: customer_id)
+      Invoice.create!(user, stripe_invoice)
+      User.adjust_credits!(user, stripe_invoice.amount_paid * 10_000)
     end)
 
     ok(conn)
   end
 
   defp proccess_event(%{type: event_type}, conn) do
-    Logger.warning("Received unknown Stripe event type: #{event_type}")
+    Sentry.capture_message("Unexpected Stripe event type '#{event_type}'.")
     ok(conn)
   end
 end

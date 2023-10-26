@@ -11,9 +11,11 @@ defmodule WavenetForChromeWeb.InvoiceController do
   end
 
   defp get_user_invoices(user, conn) do
-    case Repo.all(from i in Invoice, where: i.user_id == ^user.id) do
-      [] -> no_content(conn)
-      invoices -> ok(conn, invoices)
+    invoices_result = Repo.all(from i in Invoice, where: i.user_id == ^user.id)
+
+    case invoices_result do
+      invoices when is_list(invoices) -> ok(conn, invoices)
+      result -> throw("Unexpected invoices result '#{inspect(result)}'.")
     end
   end
 end
