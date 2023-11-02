@@ -38,7 +38,8 @@ defmodule WavenetForChrome.UserCredits do
   end
 
   def charge(pid, params) do
-    GenServer.call(pid, {:charge, params})
+    # 120 seconds is the maximum time we allow for a request to complete
+    GenServer.call(pid, {:charge, params}, 120_000)
   end
 
   # Server
