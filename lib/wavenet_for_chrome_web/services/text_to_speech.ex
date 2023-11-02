@@ -14,8 +14,9 @@ defmodule WavenetForChromeWeb.TextToSpeech do
     url = "#{@tts_api_url}/text:synthesize?key=#{key || @tts_api_key}"
     body = encode_tts_request_body(params)
     headers = [{"content-type", "application/json; charset=utf-8"}]
+    options = [timeout: 10_000, recv_timeout: 10_000]
 
-    case HTTPoison.post(url, body, headers) do
+    case HTTPoison.post(url, body, headers, options) do
       {:ok, %HTTPoison.Response{status_code: status_code, body: body}}
       when status_code in 200..299 ->
         {:ok, Poison.decode!(body)}
@@ -25,7 +26,8 @@ defmodule WavenetForChromeWeb.TextToSpeech do
         {:error, Poison.decode!(body)}
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        throw(reason)
+        Sentry.capture_message("Unexpected HTTPoison error '#{reason}'.")
+        {:error, reason}
 
       response ->
         throw("Unexpected response '#{inspect(response)}'.")
