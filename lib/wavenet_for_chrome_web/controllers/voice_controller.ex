@@ -3,9 +3,6 @@ require Logger
 defmodule WavenetForChromeWeb.VoiceController do
   use WavenetForChromeWeb, :controller
 
-  @tts_api_url System.get_env("TTS_API_URL")
-  @tts_api_key System.get_env("TTS_API_KEY")
-
   def index(conn, _params) do
     case Cachex.get(:default, "voices") do
       {:ok, voices} when is_list(voices) ->
@@ -19,7 +16,7 @@ defmodule WavenetForChromeWeb.VoiceController do
   end
 
   defp fetch_voices(conn) do
-    url = "#{@tts_api_url}/voices?key=#{@tts_api_key}"
+    url = "#{System.get_env("TTS_API_URL")}/voices?key=#{System.get_env("TTS_API_KEY")}"
 
     case HTTPoison.get(url) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->

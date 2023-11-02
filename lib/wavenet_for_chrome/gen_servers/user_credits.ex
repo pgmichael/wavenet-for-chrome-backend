@@ -18,7 +18,6 @@ defmodule WavenetForChrome.UserCredits do
   # depleting their credits too quickly, and hogging our API quotas
   @rate_limit 50
   @replenish_interval div(1_000, @rate_limit)
-  @tts_api_key System.get_env("TTS_API_KEY")
 
   # Client
 
@@ -77,7 +76,7 @@ defmodule WavenetForChrome.UserCredits do
       Repo.get_by!(User, id: state.user_id)
       |> ensure_user_has_enough_credits!(cost)
 
-    case TextToSpeech.synthesize!(params, @tts_api_key) do
+    case TextToSpeech.synthesize!(params, System.get_env("TTS_API_KEY")) do
       {:ok, body} ->
         User.adjust_credits!(user, -cost)
         Insight.track(params, state.user_ip_address, state.user_id)

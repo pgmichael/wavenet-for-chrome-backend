@@ -10,8 +10,7 @@ defmodule WavenetForChrome.Application do
     children = [
       WavenetForChromeWeb.Telemetry,
       WavenetForChrome.Repo,
-      {DNSCluster,
-       query: Application.get_env(:wavenet_for_chrome, :dns_cluster_query) || :ignore},
+      {DNSCluster, query: Application.get_env(:wavenet_for_chrome, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: WavenetForChrome.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: WavenetForChrome.Finch},
