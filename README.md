@@ -11,7 +11,7 @@ Create a `.env` file in the root directory with the following contents:
 ```bash
 # Google
 export TTS_API_KEY=<your_api_key>
-export TTS_API_URL=https://texttospeech.googleapis.com/v1
+export TTS_API_URL=https://texttospeech.googleapis.com/v1beta1
 
 # Database
 export PGHOST=<your_postgres_host>
