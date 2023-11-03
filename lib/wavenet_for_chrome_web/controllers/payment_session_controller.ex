@@ -39,7 +39,7 @@ defmodule WavenetForChromeWeb.PaymentSessionController do
 
       {:error, stripe_error} ->
         Sentry.capture_message("Failed to create stripe customer: #{inspect(stripe_error)}")
-        internal_server_error(conn)
+        internal_server_error(conn, %{message: "Failed to create stripe customer."})
     end
   end
 
@@ -53,8 +53,12 @@ defmodule WavenetForChromeWeb.PaymentSessionController do
       })
 
     case result do
-      {:ok, invoice} -> create_stripe_invoice_item(invoice, conn)
-      {:error, _} -> internal_server_error(conn)
+      {:ok, invoice} ->
+        create_stripe_invoice_item(invoice, conn)
+
+      {:error, stripe_error} ->
+        Sentry.capture_message("Failed to create stripe invoice: #{inspect(stripe_error)}")
+        internal_server_error(conn, %{message: "Failed to create stripe invoice."})
     end
   end
 
@@ -72,18 +76,28 @@ defmodule WavenetForChromeWeb.PaymentSessionController do
 
       {:error, stripe_error} ->
         Sentry.capture_message("Failed to create stripe invoice item: #{inspect(stripe_error)}")
-        internal_server_error(conn)
+        internal_server_error(conn, %{message: "Failed to create stripe invoice item."})
     end
   end
 
   defp finalize_stripe_invoice(invoice, conn) do
     case Stripe.Invoice.finalize_invoice(invoice.id) do
       {:ok, invoice} ->
-        created(conn, %{id: invoice.id, hosted_invoice_url: invoice.hosted_invoice_url})
+        expiry_date =
+          DateTime.utc_now()
+          |> DateTime.add(89, :day) # 90 days from now, minus 1 day for as a grace period for the user
+          |> DateTime.to_iso8601()
+
+        created(conn, %{
+          id: invoice.id,
+          hosted_invoice_url: invoice.hosted_invoice_url,
+          expiry_date: expiry_date
+        })
 
       {:error, stripe_error} ->
         Logger.error("Failed to finalize invoice: #{inspect(stripe_error)}")
-        internal_server_error(conn)
+        internal_server_error(conn, %{message: "Failed to finalize invoice."})
     end
   end
+
 end
